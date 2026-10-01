@@ -1,0 +1,39 @@
+package com.example.askfaculty.domain.model
+
+import com.google.firebase.Timestamp
+
+data class Doubt(
+    val id: String = "",
+    val studentId: String = "",
+    val studentName: String = "",
+    val studentPhotoUrl: String = "",
+    val studentIdNumber: String = "",
+    val facultyId: String = "",
+    val subject: String = "",
+    val topic: String = "",
+    val question: String = "",
+    val status: String = "PENDING",
+    val priority: String = "MEDIUM",
+    val attachmentUrl: String = "",
+    val attachmentType: String = "",
+    val hasUnread: Boolean = false,
+    val messageCount: Int = 0,
+    val createdAt: Timestamp? = null,
+    val updatedAt: Timestamp? = null,
+    val resolvedAt: Timestamp? = null,
+)
+
+data class Message(
+    val id: String = "",
+    val doubtId: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val senderRole: String = "",
+    val senderPhotoUrl: String = "",
+    val message: String = "",
+    val attachmentUrl: String = "",
+    val attachmentType: String = "",
+    val attachmentName: String = "",
+    val isOfficial: Boolean = false,
+    val createdAt: Timestamp? = null,
+)

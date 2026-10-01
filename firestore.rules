@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isFaculty() {
+      return isAuthenticated() && getUserData().role == 'FACULTY';
+    }
+
+    function isStudent() {
+      return isAuthenticated() && getUserData().role == 'STUDENT';
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isFaculty();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // ── Doubts ────────────────────────────────────────────────────────────
+    match /doubts/{doubtId} {
+      allow read: if isFaculty() ||
+        (isStudent() && resource.data.studentId == request.auth.uid);
+      allow create: if isStudent();
+      allow update: if isFaculty() ||
+        (isStudent() && resource.data.studentId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow delete: if false;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if isFaculty() ||
+          (isStudent() && get(/databases/$(database)/documents/doubts/$(doubtId)).data.studentId == request.auth.uid);
+        allow create: if isFaculty() ||
+          (isStudent() && get(/databases/$(database)/documents/doubts/$(doubtId)).data.studentId == request.auth.uid);
+        allow update: if isFaculty();
+        allow delete: if false;
+      }
+    }
+
+    // ── Communities ───────────────────────────────────────────────────────
+    match /communities/{communityId} {
+      allow read: if isAuthenticated();
+      allow create: if isFaculty();
+      allow update: if isFaculty() && resource.data.facultyId == request.auth.uid;
+      allow delete: if false;
+
+      // Posts subcollection
+      match /posts/{postId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isFaculty() &&
+          get(/databases/$(database)/documents/communities/$(communityId)).data.facultyId == request.auth.uid;
+        allow delete: if isFaculty() &&
+          get(/databases/$(database)/documents/communities/$(communityId)).data.facultyId == request.auth.uid;
+      }
+
+      // Resources subcollection
+      match /resources/{resourceId} {
+        allow read: if isAuthenticated();
+        allow create: if isFaculty();
+        allow update: if isFaculty();
+        allow delete: if isFaculty() &&
+          get(/databases/$(database)/documents/communities/$(communityId)).data.facultyId == request.auth.uid;
+      }
+    }
+
+    // ── Subjects ──────────────────────────────────────────────────────────
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow write: if isFaculty();
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.recipientId);
+      allow create: if isAuthenticated();
+      allow update: if isOwner(resource.data.recipientId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow delete: if false;
+    }
+  }
+}
