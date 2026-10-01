@@ -115,8 +115,8 @@ For quick evaluation without provisioning institutional credentials in Firebase 
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/Gowthami1214/RideSharingApplication.git
-   cd RideSharingApplication
+   git clone https://github.com/Gowthami1214/AskFaculty.git
+   cd AskFaculty
    ```
 
 2. **Add Firebase configuration**:
