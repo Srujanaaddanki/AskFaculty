@@ -25,6 +25,7 @@ import com.example.askfaculty.domain.model.Community
 fun SearchScreen(
     onBack: () -> Unit,
     onDoubtClick: (String) -> Unit,
+    onCommunityClick: ((String) -> Unit)? = null,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -56,7 +57,7 @@ fun SearchScreen(
             OutlinedTextField(
                 value = uiState.query,
                 onValueChange = viewModel::setQuery,
-                placeholder = { Text("Search doubts, communities, topics…") },
+                placeholder = { Text("Search doubts, spaces, topics, notes…") },
                 singleLine = true,
                 modifier = Modifier
                     .weight(1f)
@@ -79,6 +80,23 @@ fun SearchScreen(
             Spacer(modifier = Modifier.width(4.dp))
         }
 
+        // Category filter chips
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf("All", "Doubts", "Spaces", "Resources").forEach { filter ->
+                val isSelected = uiState.selectedFilter == filter
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { viewModel.setFilter(filter) },
+                    label = { Text(filter, style = MaterialTheme.typography.labelSmall) },
+                )
+            }
+        }
+
         HorizontalDivider()
 
         // ── Content area ──────────────────────────────────────────────────
@@ -87,7 +105,7 @@ fun SearchScreen(
                 EmptyState(
                     icon = Icons.Default.Search,
                     title = "Search AskFaculty",
-                    subtitle = "Search across doubts, communities, topics",
+                    subtitle = "Search across doubts, faculty answers, academic spaces, and lecture notes.",
                 )
             }
 
@@ -95,11 +113,11 @@ fun SearchScreen(
                 LoadingState()
             }
 
-            uiState.doubts.isEmpty() && uiState.communities.isEmpty() -> {
+            uiState.doubts.isEmpty() && uiState.communities.isEmpty() && uiState.resources.isEmpty() -> {
                 EmptyState(
                     icon = Icons.Default.SearchOff,
-                    title = "No results",
-                    subtitle = "Try a different search term.",
+                    title = "No results found",
+                    subtitle = "Try a different search term or subject.",
                 )
             }
 
@@ -109,16 +127,16 @@ fun SearchScreen(
                     contentPadding = PaddingValues(bottom = 16.dp),
                 ) {
                     // ── Doubts section ────────────────────────────────────
-                    if (uiState.doubts.isNotEmpty()) {
+                    if ((uiState.selectedFilter == "All" || uiState.selectedFilter == "Doubts") && uiState.doubts.isNotEmpty()) {
                         item {
                             SearchResultHeader(
-                                title = "Doubts",
+                                title = "Doubts & Answers",
                                 count = uiState.doubts.size,
                             )
                         }
                         items(
                             items = uiState.doubts,
-                            key = { it.id },
+                            key = { "doubt_${it.id}" },
                         ) { doubt ->
                             DoubtCard(
                                 doubt = doubt,
@@ -128,18 +146,48 @@ fun SearchScreen(
                     }
 
                     // ── Communities section ───────────────────────────────
-                    if (uiState.communities.isNotEmpty()) {
+                    if ((uiState.selectedFilter == "All" || uiState.selectedFilter == "Spaces") && uiState.communities.isNotEmpty()) {
                         item {
                             SearchResultHeader(
-                                title = "Communities",
+                                title = "Academic Spaces",
                                 count = uiState.communities.size,
                             )
                         }
                         items(
                             items = uiState.communities,
-                            key = { it.id },
+                            key = { "space_${it.id}" },
                         ) { community ->
-                            CommunitySearchListItem(community = community)
+                            CommunitySearchListItem(
+                                community = community,
+                                onClick = { onCommunityClick?.invoke(community.id) },
+                            )
+                        }
+                    }
+
+                    // ── Resources section ─────────────────────────────────
+                    if ((uiState.selectedFilter == "All" || uiState.selectedFilter == "Resources") && uiState.resources.isNotEmpty()) {
+                        item {
+                            SearchResultHeader(
+                                title = "Study Materials & Notes",
+                                count = uiState.resources.size,
+                            )
+                        }
+                        items(
+                            items = uiState.resources,
+                            key = { "res_${it.id}" },
+                        ) { res ->
+                            ListItem(
+                                headlineContent = { Text(res.title, fontWeight = FontWeight.SemiBold) },
+                                supportingContent = { Text("${res.subject} • Prof. ${res.uploaderName}") },
+                                leadingContent = {
+                                    Icon(
+                                        imageVector = Icons.Default.Description,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                },
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         }
                     }
                 }
@@ -179,7 +227,10 @@ private fun SearchResultHeader(title: String, count: Int) {
 }
 
 @Composable
-private fun CommunitySearchListItem(community: Community) {
+private fun CommunitySearchListItem(
+    community: Community,
+    onClick: () -> Unit = {},
+) {
     ListItem(
         headlineContent = {
             Text(
@@ -218,7 +269,9 @@ private fun CommunitySearchListItem(community: Community) {
                 }
             }
         },
-        modifier = Modifier.padding(horizontal = 4.dp),
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp),
     )
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 }

@@ -47,8 +47,11 @@ class MainActivity : ComponentActivity() {
             AskFacultyTheme(darkTheme = isDarkTheme) {
                 val navController = rememberNavController()
 
-                // Observe current user auth state for notifications
+                // Observe current user auth state for notifications & role
                 val currentUser = FirebaseAuth.getInstance().currentUser
+                val currentAppUser by authRepository.currentUser.collectAsState(initial = null)
+                val isStudent = currentAppUser?.role == com.example.askfaculty.core.util.Constants.ROLE_STUDENT
+
                 val unreadCount by if (currentUser != null) {
                     notificationRepository.getUnreadCount(currentUser.uid).collectAsState(initial = 0)
                 } else {
@@ -64,6 +67,7 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = Routes.Splash.route,
                         unreadNotifications = unreadCount,
+                        isStudent = isStudent,
                     )
                 }
             }

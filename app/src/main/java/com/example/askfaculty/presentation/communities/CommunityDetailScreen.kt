@@ -38,11 +38,22 @@ fun CommunityDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = uiState.community?.name ?: "Community",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Column {
+                        Text(
+                            text = uiState.community?.name ?: "Community",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        uiState.community?.facultyName?.let { facName ->
+                            Text(
+                                text = "Prof. $facName • ${uiState.community?.memberCount ?: 0} members",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -50,6 +61,20 @@ fun CommunityDetailScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                         )
+                    }
+                },
+                actions = {
+                    if (uiState.currentUserRole == Constants.ROLE_STUDENT) {
+                        FilledTonalButton(
+                            onClick = viewModel::toggleJoinCommunity,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            Text(
+                                text = if (uiState.isMember) "Joined ✓" else "Join",
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -102,6 +127,9 @@ fun CommunityDetailScreen(
                     when (uiState.selectedTab) {
                         0 -> PostsTab(
                             posts = uiState.posts,
+                            currentUserRole = uiState.currentUserRole,
+                            currentUserId = uiState.currentUserId,
+                            onToggleHelpful = { postId -> viewModel.toggleHelpful(postId) },
                             onPinPost = { postId, isPinned -> viewModel.pinPost(postId, isPinned) },
                             onMarkOfficial = { postId, isOfficial ->
                                 viewModel.markPostOfficial(postId, isOfficial)
@@ -127,6 +155,9 @@ fun CommunityDetailScreen(
 @Composable
 private fun PostsTab(
     posts: List<Post>,
+    currentUserRole: String,
+    currentUserId: String,
+    onToggleHelpful: (String) -> Unit,
     onPinPost: (String, Boolean) -> Unit,
     onMarkOfficial: (String, Boolean) -> Unit,
     onDeletePost: (String) -> Unit,
@@ -151,6 +182,9 @@ private fun PostsTab(
             ) { post ->
                 PostCard(
                     post = post,
+                    currentUserRole = currentUserRole,
+                    currentUserId = currentUserId,
+                    onToggleHelpful = { onToggleHelpful(post.id) },
                     onPinPost = { onPinPost(post.id, !post.isPinned) },
                     onMarkOfficial = { onMarkOfficial(post.id, !post.isOfficialAnswer) },
                     onDeletePost = { onDeletePost(post.id) },
@@ -163,6 +197,9 @@ private fun PostsTab(
 @Composable
 private fun PostCard(
     post: Post,
+    currentUserRole: String,
+    currentUserId: String,
+    onToggleHelpful: () -> Unit,
     onPinPost: () -> Unit,
     onMarkOfficial: () -> Unit,
     onDeletePost: () -> Unit,
@@ -238,10 +275,27 @@ private fun PostCard(
             Text(
                 text = post.content,
                 style = MaterialTheme.typography.bodyMedium,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+
+            // Code snippet if present
+            if (post.codeSnippet.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = androidx.compose.ui.graphics.Color(0xFF1E1E2E),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = post.codeSnippet,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        ),
+                        color = androidx.compose.ui.graphics.Color(0xFFCDD6F4),
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -250,25 +304,36 @@ private fun PostCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                // Helpful count
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                // Helpful button / count
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(end = 8.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ThumbUp,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "${post.helpfulCount}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        IconButton(
+                            onClick = onToggleHelpful,
+                            modifier = Modifier.size(24.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ThumbUp,
+                                contentDescription = "Helpful",
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${post.helpfulCount}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
 
                 // Reply count
                 Row(
@@ -290,37 +355,39 @@ private fun PostCard(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Pin / Unpin action
-                IconButton(
-                    onClick = onPinPost,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        imageVector = if (post.isPinned) Icons.Default.PushPin else Icons.Default.PushPin,
-                        contentDescription = if (post.isPinned) "Unpin post" else "Pin post",
-                        modifier = Modifier.size(18.dp),
-                        tint = if (post.isPinned)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                // Faculty-only: Pin / Unpin action
+                if (currentUserRole == Constants.ROLE_FACULTY) {
+                    IconButton(
+                        onClick = onPinPost,
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PushPin,
+                            contentDescription = if (post.isPinned) "Unpin post" else "Pin post",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (post.isPinned)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    // Mark official / remove official
+                    IconButton(
+                        onClick = onMarkOfficial,
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (post.isOfficialAnswer) Icons.Default.Verified else Icons.Default.VerifiedUser,
+                            contentDescription = if (post.isOfficialAnswer) "Remove official mark" else "Mark as official",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (post.isOfficialAnswer) OfficialAnswer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
-                // Mark official / remove official
-                IconButton(
-                    onClick = onMarkOfficial,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        imageVector = if (post.isOfficialAnswer) Icons.Default.Verified else Icons.Default.VerifiedUser,
-                        contentDescription = if (post.isOfficialAnswer) "Remove official mark" else "Mark as official",
-                        modifier = Modifier.size(18.dp),
-                        tint = if (post.isOfficialAnswer) OfficialAnswer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                // Delete action (only for faculty role)
-                if (post.authorRole == Constants.ROLE_FACULTY) {
+                // Delete action (faculty or author)
+                if (currentUserRole == Constants.ROLE_FACULTY || post.authorId == currentUserId) {
                     IconButton(
                         onClick = onDeletePost,
                         modifier = Modifier.size(32.dp),

@@ -2,11 +2,15 @@ package com.example.askfaculty.navigation
 
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QuestionAnswer
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Notifications
@@ -35,27 +39,38 @@ data class BottomNavItem(
     val badgeCount: Int = 0,
 )
 
-val bottomNavItems = listOf(
-    BottomNavItem("Home",          Routes.Home.route,          Icons.Filled.Home,           Icons.Outlined.Home),
-    BottomNavItem("Doubts",        Routes.Doubts.route,        Icons.Filled.QuestionAnswer, Icons.Outlined.QuestionAnswer),
-    BottomNavItem("Communities",   Routes.Communities.route,   Icons.Filled.Groups,         Icons.Outlined.Groups),
-    BottomNavItem("Alerts",        Routes.Notifications.route, Icons.Filled.Notifications,  Icons.Outlined.Notifications),
-    BottomNavItem("Profile",       Routes.Profile.route,       Icons.Filled.Person,         Icons.Outlined.Person),
+val facultyNavItems = listOf(
+    BottomNavItem("Home",        Routes.Home.route,          Icons.Filled.Home,           Icons.Outlined.Home),
+    BottomNavItem("Doubts",      Routes.Doubts.route,        Icons.Filled.QuestionAnswer, Icons.Outlined.QuestionAnswer),
+    BottomNavItem("Communities", Routes.Communities.route,   Icons.Filled.Groups,         Icons.Outlined.Groups),
+    BottomNavItem("Alerts",      Routes.Notifications.route, Icons.Filled.Notifications,  Icons.Outlined.Notifications),
+    BottomNavItem("Profile",     Routes.Profile.route,       Icons.Filled.Person,         Icons.Outlined.Person),
+)
+
+val studentNavItems = listOf(
+    BottomNavItem("Home",        Routes.StudentHome.route,        Icons.Filled.Home,           Icons.Outlined.Home),
+    BottomNavItem("My Doubts",   Routes.StudentDoubts.route,      Icons.Filled.QuestionAnswer, Icons.Outlined.QuestionAnswer),
+    BottomNavItem("Communities", Routes.StudentCommunities.route, Icons.Filled.Groups,         Icons.Outlined.Groups),
+    BottomNavItem("Resources",   Routes.StudentResources.route,   Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook),
+    BottomNavItem("Profile",     Routes.StudentProfile.route,     Icons.Filled.Person,         Icons.Outlined.Person),
 )
 
 @Composable
 fun BottomNavBar(
     currentRoute: String?,
+    isStudent: Boolean = false,
     unreadNotifications: Int,
     onNavigate: (String) -> Unit,
 ) {
+    val items = if (isStudent) studentNavItems else facultyNavItems
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         modifier       = Modifier.height(AskFacultyDimensions.bottomNavHeight),
     ) {
-        bottomNavItems.forEach { item ->
-            val isSelected = currentRoute?.startsWith(item.route) == true
+        items.forEach { item ->
+            val isSelected = currentRoute == item.route || currentRoute?.startsWith("${item.route}/") == true
             val badge = if (item.route == Routes.Notifications.route) unreadNotifications else item.badgeCount
 
             NavigationBarItem(

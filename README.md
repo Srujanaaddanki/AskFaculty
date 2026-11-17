@@ -1,92 +1,90 @@
-# 🎓 AskFaculty — Faculty & Staff Portal (Android)
+# 🎓 AskFaculty — Dual-Role University Academic Mentorship Platform (Android)
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple.svg)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-purple.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Architecture](https://img.shields.io/badge/Architecture-Clean%20%2F%20MVVM-green.svg)](https://developer.android.com/topic/architecture)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore%20%7C%20Storage%20%7C%20FCM-orange.svg)](https://firebase.google.com)
 [![License](https://img.shields.io/badge/License-Academic-lightgrey.svg)](#license)
 
-**AskFaculty** is a university-grade Android application designed specifically for professors, faculty members, and academic mentors. Built with **Jetpack Compose**, **Material 3**, and **Clean Architecture**, it provides faculty with an organized, trustworthy platform to address student doubts, manage academic communities, and share learning resources.
+**AskFaculty** is a production-grade, dual-role academic mentorship and doubt resolution platform built for universities, colleges, and educational institutions. Developed with modern **Jetpack Compose**, **Material 3**, **Kotlin Coroutines / StateFlow**, **Dagger Hilt**, and **Firebase**, AskFaculty bridges the gap between students and professors through structured doubt queues, collaborative academic spaces, verified faculty answers, curated learning resources, and secure server-assisted AI tools.
 
 ---
 
-## 📱 Screenshots & Overview
+## 👥 Dual-Role System Overview
 
-The application features a centralized, high-contrast academic design system with a deliberate dark mode, fluid micro-interactions, and real-time state synchronization.
+AskFaculty supports two primary user roles with dedicated interfaces, capabilities, and navigation flows:
 
-* **Startup & Onboarding**: Smooth splash transition and a 3-step onboarding walkthrough explaining the mentorship workflow.
-* **Institutional Authentication**: Strict 5-digit Faculty ID login with Firestore role validation.
-* **Home Dashboard**: Executive overview with pending KPIs, quick actions, weekly resolution chart, and high-priority doubt cards.
-* **Doubts Management**: Searchable, tab-filtered doubt queue with badge counts, shimmer loading states, and filter bottom sheet.
-* **Interactive Doubt Thread**: Full chat thread, verified "✓ Official Faculty Answer" badges, AI assistant suggestion drafts, and document/image attachment previews.
-* **Academic Spaces (Communities)**: Course-specific spaces with cycling gradient banners, member counters, and discussion channels.
-* **Notifications**: Grouped chronologically (*Today*, *Yesterday*, *Earlier*) with swipe-to-dismiss and unread indicators.
-* **Profile & Settings**: Faculty identity card, real-time availability toggle (*Available*, *Busy*, *Away*), scheduled office hours, and DataStore-persisted theme selection (*System Default*, *Light*, *Dark*).
-
----
-
-## 🏗️ Architecture & Tech Stack
-
-The project adheres to **Clean Architecture** and **MVVM** principles with unidirectional data flow (UDF):
-
-```
-app/
-├── core/
-│   ├── firebase/          # Firebase DI module, FCM service
-│   ├── network/           # Network connectivity monitor
-│   ├── ui/components/     # Reusable design system component library
-│   └── util/              # Constants, date formatters, extensions
-├── data/
-│   ├── model/             # DTO data transfer objects
-│   └── repository/        # Repository implementations with demo fallbacks
-├── domain/
-│   ├── model/             # Domain entities and UiState models
-│   ├── repository/        # Repository abstractions/interfaces
-│   └── usecase/           # Domain use cases (Auth, Doubts, Communities, Profile)
-├── navigation/            # Routes, NavGraph, and Bottom navigation bar
-├── presentation/          # Compose UI screens and ViewModel pairs
-│   ├── auth/              # LoginScreen & ForgotPasswordScreen
-│   ├── communities/       # CommunitiesScreen, Detail, Create Spaces
-│   ├── doubts/            # DoubtsScreen & DoubtDetailScreen
-│   ├── home/              # HomeScreen dashboard
-│   ├── notifications/     # NotificationsScreen
-│   ├── onboarding/        # OnboardingScreen
-│   ├── profile/           # ProfileScreen & EditProfileScreen
-│   ├── search/            # SearchScreen
-│   ├── settings/          # SettingsScreen (Theme, Alerts)
-│   └── splash/            # SplashScreen
-└── ui/theme/              # Design tokens: Spacing, Dimensions, Color, Type, Theme
-```
-
-### Technology Highlights
-
-| Layer | Technologies |
-|---|---|
-| **Language & Core** | Kotlin 2.0+, Kotlin Coroutines, StateFlow / Flow |
-| **UI Framework** | Jetpack Compose, Material 3, Navigation Compose |
-| **Dependency Injection**| Dagger Hilt with KSP |
-| **Backend & Cloud** | Firebase Authentication, Cloud Firestore, Cloud Storage, Firebase Cloud Messaging (FCM) |
-| **Local Storage** | Jetpack DataStore Preferences (Theme & Onboarding state) |
-| **Image Loading** | Coil Compose |
-| **Minimum SDK** | Android 7.0 (API Level 24) |
-| **Target / Compile SDK**| Android 15 / 16 (API Level 35/37) |
+### 🎓 1. Student Application
+* **Authentication & Onboarding**:
+  * Dual tabbed login: Student College ID / Institutional Email + Password.
+  * Complete Student Registration with College ID, Department, and Academic Year / Semester.
+  * Institutional password recovery.
+  * 3-step interactive onboarding walkthrough with Next, Skip, and Get Started navigation.
+* **Student Home Dashboard**:
+  * Personalized greeting and student profile overview.
+  * Real-time KPI metric cards: *Pending Doubts*, *Answered Doubts*, *Joined Spaces*.
+  * Registered subject pills with instant doubt filtering.
+  * Pinned faculty announcements and urgent exam notices.
+  * Recent faculty answers showcase with one-tap access.
+  * Floating Quick "Ask a Doubt" FAB.
+* **Complete "Ask a Doubt" Workflow**:
+  * Academic Subject & Faculty Member dropdown selector.
+  * Topic and detailed question input.
+  * **Code Snippet Support**: Paste code with language selection (C++, Java, Python, Kotlin, SQL) rendered in dark monospace blocks.
+  * **Speech-to-Text Voice Input**: Integrated Android Speech Recognizer for voice dictation.
+  * **File & Image Attachments**: Upload PDFs, documents, or screenshots via Firebase Storage.
+  * **Privacy Controls**: Choose between Private submission (visible only to assigned faculty) or Space submission (visible to course community).
+* **My Doubts Management & Follow-up**:
+  * Filter queue by *All*, *Pending*, *Answered*, and *Resolved*.
+  * Search doubts by topic or keyword.
+  * Interactive discussion thread with faculty responses and student follow-ups.
+  * **Student Resolution Banner**: Mark answered doubts as Resolved when satisfied.
+  * **Reopen Doubt Workflow**: Submit a reopening reason if further clarification is needed.
+  * **Helpful Feedback**: Tap "Helpful 👍" on faculty answers.
+* **Academic Spaces & Communities**:
+  * Explore All Spaces vs Joined Spaces tabs.
+  * Course & subject filter chips.
+  * Join and leave course spaces.
+  * Read community discussions, view pinned posts, and verify faculty answers.
+* **Academic Resources & Slides**:
+  * Faculty-curated lecture slides, syllabus guides, PDF notes, and reference links.
+  * Filter by subject or resource type (PDFs, Slides, Reference Links).
+  * Direct file viewing/downloading via system intent launcher.
+* **Global Search & Bookmarks**:
+  * Universal search across doubts, faculty answers, community discussions, and study materials.
+  * Dedicated **Saved Screen** for offline reference of bookmarked discussions.
+* **AskFaculty AI Assistant (Phase 4)**:
+  * **Concept Explainer**: Rapid conceptual breakdown with "Escalate to Faculty" handoff.
+  * **Question Rephraser**: Improve unclear student questions before submission.
+  * **Study Notes Generator**: Generate structured revision notes by subject and topic.
+  * **Practice Questions**: Generate conceptual MCQs for exam preparation.
+* **Student Profile & Settings**:
+  * Academic identity card (College ID, Department, Year, Semester).
+  * Activity metrics (Doubts Asked, Resolved, Spaces Joined).
+  * Granular push notification preferences (Doubt replies, Space notices, New notes).
 
 ---
 
-## 🎨 Centralized Design System
-
-AskFaculty uses a cohesive design token system rather than ad-hoc styling:
-
-* **Color Palette** (`Color.kt`):
-  * **Primary**: Indigo (`#4F46E5`)
-  * **Secondary**: Violet (`#7C3AED`)
-  * **Accent / Tertiary**: Sky-Teal (`#0EA5E9`)
-  * **Dark Theme**: Deliberate deep midnight (`#0B1020`), navy surfaces (`#121A2A`), elevated (`#182235`)
-  * **Semantic Status**: Pending (`#D97706`), In Progress (`#4F46E5`), Answered (`#16A34A`), Resolved (`#7C3AED`)
-* **Spacing Tokens** (`AskFacultySpacing`): 8-point harmonic scale (`xs=4.dp`, `sm=8.dp`, `md=12.dp`, `lg=16.dp`, `xl=24.dp`, `xxl=32.dp`, `xxxl=48.dp`, `xxxxl=64.dp`).
-* **Dimension Tokens** (`AskFacultyDimensions`): Standardized control heights (`buttonHeight=52.dp`, `textFieldHeight=56.dp`), avatar sizes (`32.dp` - `96.dp`), touch targets (`minTouchTarget=48.dp`).
-* **Shapes & Radius** (`AskFacultyRadius`): `xs=4.dp`, `sm=8.dp`, `md=12.dp`, `lg=16.dp`, `xl=20.dp`, `xxl=24.dp`, `pill=50.dp`.
-* **Component Library** (`CommonComponents.kt`): `AskFacultyButton`, `AskFacultyOutlinedButton`, `AskFacultyTextField`, `AskFacultySearchBar`, `AskFacultyTopBar`, `AskFacultyStatusChip`, `AskFacultyPriorityChip`, `AskFacultyAvatar`, `AskFacultySkeleton`, `AskFacultyEmptyState`, `AskFacultyErrorState`, `DoubtCard`, `StatCard`, `QuickActionCard`.
+### 👨‍🏫 2. Faculty Portal
+* **Authentication**: Strict 5-digit Faculty ID (`30456`) login with institutional verification.
+* **Executive Dashboard**:
+  * High-priority doubts counter and pending reviews.
+  * Weekly resolution trends chart.
+  * Urgent doubt cards with priority badges (🔴 High, 🟡 Medium, 🟢 Low).
+* **Doubt Management Queue**:
+  * Searchable queue with status tabs (*Pending*, *In Progress*, *Answered*, *Resolved*).
+  * Priority filter bottom sheet and subject chips.
+* **Official Doubt Response & Verification**:
+  * Two-way discussion thread.
+  * **"Mark as Official Answer"**: Star verified faculty answers with green checkmark border.
+  * **AI Teaching Assistant**: Generate doubt synopsis and draft responses to review and edit before sending.
+  * Status and priority adjuster sheet.
+* **Community Space Administration**:
+  * Create new academic spaces with custom subjects and descriptions.
+  * Pin announcements and important discussion posts.
+* **Faculty Availability & Office Hours**:
+  * Real-time availability status (*Available*, *Busy*, *Away*).
+  * Weekly scheduled office hours (Day, Start Time, End Time, Location).
 
 ---
 
@@ -94,62 +92,99 @@ AskFaculty uses a cohesive design token system rather than ad-hoc styling:
 
 For quick evaluation without provisioning institutional credentials in Firebase Auth:
 
-| Field | Demo Credential |
-|---|---|
-| **Faculty ID** | `30456` |
-| **Password** | `Gow@1415` |
-
-> **Note**: Entering ID `30456` automatically accesses the demo fallback dataset containing priority doubts, active community spaces, notifications, and profile details.
+| Role | Identifier / ID | Password | Access / Notes |
+|---|---|---|---|
+| **Student** | `22CS104` (or `student@askfaculty.edu`) | `Student@123` | Full Student Application, Dashboard, Ask a Doubt, Saved, AI Assistant |
+| **Faculty** | `30456` | `Gow@1415` | Full Faculty Portal, Priority Doubt Queue, Official Verification, AI Panel |
 
 ---
 
-## 🚀 Getting Started
+## 🏗️ Clean Architecture & Project Structure
 
-### Prerequisites
+The project strictly follows **Clean Architecture** and **MVVM** principles with unidirectional data flow (UDF):
 
-* **Android Studio** Ladybug (2024.2+) or Meerkat
-* **JDK 17** or higher
-* **Android SDK** API 35 or 37 installed
+```
+app/src/main/java/com/example/askfaculty/
+├── core/
+│   ├── firebase/          # Firebase DI module, FCM service, Firestore collections
+│   ├── network/           # Network connectivity monitor
+│   ├── ui/components/     # Design token components (Buttons, Chips, Cards, States)
+│   └── util/              # Constants, extensions, date formatters
+├── data/
+│   ├── model/             # DTO data transfer objects
+│   ├── remote/            # AiDataSource (Cloud Function endpoints with secure fallbacks)
+│   └── repository/        # Repository implementations with Firebase & demo fallbacks
+├── domain/
+│   ├── model/             # Domain models (User, Doubt, Community, Resource, Notification)
+│   └── repository/        # Repository contracts (Auth, Doubt, Community, Profile, etc.)
+├── navigation/            # Routes, BottomNavBar, App / FacultyNavGraph
+├── presentation/          # Feature UI screens and ViewModels
+│   ├── ai/                # AiAssistantScreen & AiAssistantViewModel
+│   ├── auth/              # LoginScreen, RegisterScreen, ForgotPasswordScreen
+│   ├── communities/       # CommunitiesScreen, CommunityDetailScreen, CreatePost
+│   ├── doubts/            # DoubtsScreen, DoubtDetailScreen, AskDoubtScreen
+│   ├── home/              # HomeScreen (Faculty Dashboard)
+│   ├── notifications/     # NotificationsScreen
+│   ├── onboarding/        # OnboardingScreen
+│   ├── profile/           # ProfileScreen, EditProfile, Availability
+│   ├── resources/         # ResourcesScreen & ResourcesViewModel
+│   ├── search/            # SearchScreen & SearchViewModel
+│   ├── settings/          # SettingsScreen (Theme, Alerts)
+│   ├── splash/            # SplashScreen & SplashViewModel
+│   └── student/           # StudentHomeScreen, StudentDoubtsScreen, SavedScreen, Profile
+└── ui/theme/              # Design tokens: Spacing, Dimensions, Color, Type, Theme
+```
 
-### Setup & Run
+---
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Gowthami1214/AskFaculty.git
-   cd AskFaculty
-   ```
+## 🎨 Design System & Accessibility
 
-2. **Add Firebase configuration**:
-   Ensure `app/google-services.json` is present in the `app/` directory with your Firebase project credentials.
-
-3. **Build Debug APK**:
-   ```powershell
-   ./gradlew assembleDebug
-   ```
-   The generated APK will be available at:
-   ```
-   app/build/outputs/apk/debug/app-debug.apk
-   ```
-
-4. **Run Unit Tests**:
-   ```powershell
-   ./gradlew testDebugUnitTest
-   ```
-
-5. **Install on Connected Device / Emulator**:
-   ```powershell
-   ./gradlew installDebug
-   ```
+* **Material 3 Token System**:
+  * Primary: `#4F46E5` (Indigo)
+  * Secondary: `#7C3AED` (Violet)
+  * Accent: `#0EA5E9` (Sky-Teal)
+  * Semantic Statuses: Pending (`#D97706`), In Progress (`#4F46E5`), Answered (`#16A34A`), Resolved (`#7C3AED`)
+* **Dark Mode**: Deliberate deep midnight background (`#0B1020`), elevated card surfaces (`#182235`), and high contrast text.
+* **Component Library**: Unified cards (`DoubtCard`, `StatCard`), standardized button heights (`52.dp`), minimum touch targets (`48.dp`), and responsive layouts.
 
 ---
 
 ## 🔒 Security & Firestore Rules
 
-* Role-based access ensures that only users with `role == "FACULTY"` can post official answers, change doubt resolution status, or administer academic spaces.
-* Cloud Firestore security rules are defined in `firestore.rules` and indexed via `firestore.indexes.json`.
+* **Role Verification**: Backend enforcement ensuring only `role == "FACULTY"` can post official answers, delete resources, or manage space settings.
+* **Private Doubts**: Private doubts are strictly readable only by the submitting student and assigned faculty member.
+* **No API Keys in APK**: All AI features communicate with server-side Cloud Functions without storing private Gemini/OpenAI API keys in the client APK.
+* **Firestore Rules**: Stored in `firestore.rules` and indexed via `firestore.indexes.json`.
+
+---
+
+## 🚀 Build, Test & Run
+
+### Prerequisites
+* **Android Studio** Ladybug (2024.2+) or Meerkat
+* **JDK 17** (matching project toolchain)
+* **Android SDK** API 35 or API 37
+
+### 1. Build Debug APK
+```powershell
+./gradlew assembleDebug
+```
+Output APK location:
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+### 2. Run Unit Tests
+```powershell
+./gradlew testDebugUnitTest
+```
+
+### 3. Install on Connected Device / Emulator
+```powershell
+./gradlew installDebug
+```
 
 ---
 
 ## 📄 License
-
 Academic / Institutional use. Developed for university and college mentorship networks.

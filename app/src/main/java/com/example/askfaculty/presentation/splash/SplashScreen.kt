@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.askfaculty.ui.theme.AskFacultySpacing
-import com.example.askfaculty.ui.theme.GradientEnd
 import com.example.askfaculty.ui.theme.GradientMid
 import com.example.askfaculty.ui.theme.GradientStart
 
@@ -47,7 +46,8 @@ import com.example.askfaculty.ui.theme.GradientStart
 fun SplashScreen(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    onNavigateToHome: () -> Unit,
+    onNavigateToFacultyHome: () -> Unit,
+    onNavigateToStudentHome: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
     val destination by viewModel.destination.collectAsStateWithLifecycle()
@@ -69,14 +69,14 @@ fun SplashScreen(
     }
     LaunchedEffect(destination) {
         when (destination) {
-            is SplashDestination.Onboarding -> onNavigateToOnboarding()
-            is SplashDestination.Login      -> onNavigateToLogin()
-            is SplashDestination.Home       -> onNavigateToHome()
+            is SplashDestination.Onboarding  -> onNavigateToOnboarding()
+            is SplashDestination.Login       -> onNavigateToLogin()
+            is SplashDestination.FacultyHome  -> onNavigateToFacultyHome()
+            is SplashDestination.StudentHome  -> onNavigateToStudentHome()
             null -> Unit
         }
     }
 
-    // Pulsing ring animation
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val ringAlpha by infiniteTransition.animateFloat(
         initialValue = 0.15f,
@@ -110,7 +110,6 @@ fun SplashScreen(
                 .alpha(alpha.value)
                 .padding(AskFacultySpacing.xxl),
         ) {
-            // Outer pulsing ring
             Box(contentAlignment = Alignment.Center) {
                 Box(
                     modifier = Modifier
@@ -125,7 +124,6 @@ fun SplashScreen(
                             )
                         ),
                 )
-                // Logo icon box with gradient
                 Box(
                     modifier = Modifier
                         .size(88.dp)
@@ -158,7 +156,7 @@ fun SplashScreen(
             Spacer(Modifier.height(AskFacultySpacing.xs))
 
             Text(
-                text          = "FACULTY PORTAL",
+                text          = "ACADEMIC NETWORK",
                 style         = MaterialTheme.typography.labelMedium,
                 fontWeight    = FontWeight.SemiBold,
                 color         = MaterialTheme.colorScheme.primary,
@@ -167,7 +165,6 @@ fun SplashScreen(
 
             Spacer(Modifier.height(AskFacultySpacing.xxl))
 
-            // Shimmer loading indicator
             Box(
                 modifier = Modifier
                     .size(width = 48.dp, height = 3.dp)
@@ -184,9 +181,8 @@ fun SplashScreen(
             )
         }
 
-        // Footer tagline
         Text(
-            text          = "Academic Knowledge Network",
+            text          = "University Academic Mentorship Network",
             style         = MaterialTheme.typography.labelSmall,
             color         = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             letterSpacing = 1.sp,

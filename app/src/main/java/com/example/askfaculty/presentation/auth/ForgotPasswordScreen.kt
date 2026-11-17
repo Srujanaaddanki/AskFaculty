@@ -14,12 +14,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,14 +31,20 @@ import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.MarkEmailRead
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,9 +53,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.askfaculty.core.ui.components.AskFacultyButton
@@ -64,13 +74,14 @@ import com.example.askfaculty.ui.theme.SuccessColor
 
 @Composable
 fun ForgotPasswordScreen(
+    initialIsStudent: Boolean = false,
     onBack: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var facultyId by remember { mutableStateOf("") }
+    var selectedTab by remember { mutableIntStateOf(if (initialIsStudent) 0 else 1) }
+    var accountId by remember { mutableStateOf(if (initialIsStudent) "22CS104" else "30456") }
 
-    // Animate the icon scale in on entry
     val iconScale by animateFloatAsState(
         targetValue = 1f,
         animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
@@ -93,35 +104,17 @@ fun ForgotPasswordScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-
-            // ── Gradient Hero Section ──────────────────────────────────────────
+            // Hero section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(AskFacultySpacing.xxxxl + AskFacultySpacing.xxxxl), // 128dp hero
+                    .height(130.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                // Ambient gradient splash behind the icon box
-                Box(
-                    modifier = Modifier
-                        .size(AskFacultySpacing.xxxxl + AskFacultySpacing.xxxxl) // 128dp circle
-                        .clip(RoundedCornerShape(AskFacultyRadius.pill))
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    GradientStart.copy(alpha = 0.18f),
-                                    GradientMid.copy(alpha = 0.10f),
-                                    GradientEnd.copy(alpha = 0.0f),
-                                ),
-                            ),
-                        ),
-                )
-
-                // Gradient icon container
                 Box(
                     modifier = Modifier
                         .scale(iconScale)
-                        .size(AskFacultyDimensions.avatarXl)          // 80dp
+                        .size(AskFacultyDimensions.avatarXl)
                         .clip(RoundedCornerShape(AskFacultyRadius.xxl))
                         .background(
                             Brush.linearGradient(
@@ -139,13 +132,54 @@ fun ForgotPasswordScreen(
                 }
             }
 
-            // ── Main Content Card ──────────────────────────────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = AskFacultySpacing.xl),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Role selector
+                Surface(
+                    shape = RoundedCornerShape(AskFacultyRadius.lg),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier
+                                    .tabIndicatorOffset(tabPositions[selectedTab])
+                                    .clip(RoundedCornerShape(AskFacultyRadius.pill)),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                        divider = {},
+                    ) {
+                        Tab(
+                            selected = selectedTab == 0,
+                            onClick = {
+                                selectedTab = 0
+                                accountId = "22CS104"
+                                viewModel.clearError()
+                            },
+                            text = { Text("Student", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
+                        )
+                        Tab(
+                            selected = selectedTab == 1,
+                            onClick = {
+                                selectedTab = 1
+                                accountId = "30456"
+                                viewModel.clearError()
+                            },
+                            text = { Text("Faculty", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(AskFacultySpacing.lg))
 
                 AnimatedContent(
                     targetState = uiState.passwordResetSent,
@@ -155,30 +189,33 @@ fun ForgotPasswordScreen(
                     },
                     label = "reset_content_transition",
                 ) { isSuccess ->
-
                     if (isSuccess) {
-                        // ── Success State ──────────────────────────────────────
                         SuccessPanel(
-                            facultyId = facultyId,
+                            accountId = accountId,
+                            isStudent = selectedTab == 0,
                             onBackToSignIn = {
                                 viewModel.clearPasswordResetFlag()
                                 onBack()
                             },
                         )
                     } else {
-                        // ── Form State ─────────────────────────────────────────
                         FormPanel(
-                            facultyId = facultyId,
-                            onFacultyIdChange = { input ->
-                                if (input.length <= 5 && input.all { it.isDigit() }) {
-                                    facultyId = input
-                                    viewModel.clearError()
-                                }
+                            isStudent = selectedTab == 0,
+                            accountId = accountId,
+                            onAccountIdChange = { input ->
+                                accountId = input
+                                viewModel.clearError()
                             },
                             isLoading = uiState.isLoading,
                             errorMessage = uiState.error,
                             onDismissError = viewModel::clearError,
-                            onSendReset = { viewModel.sendPasswordResetForFacultyId(facultyId) },
+                            onSendReset = {
+                                if (selectedTab == 0) {
+                                    viewModel.sendPasswordResetForStudentId(accountId)
+                                } else {
+                                    viewModel.sendPasswordResetForFacultyId(accountId)
+                                }
+                            },
                             onBack = onBack,
                         )
                     }
@@ -188,14 +225,11 @@ fun ForgotPasswordScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Form Panel — Faculty ID input + Send Reset button
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun FormPanel(
-    facultyId: String,
-    onFacultyIdChange: (String) -> Unit,
+    isStudent: Boolean,
+    accountId: String,
+    onAccountIdChange: (String) -> Unit,
     isLoading: Boolean,
     errorMessage: String?,
     onDismissError: () -> Unit,
@@ -206,10 +240,8 @@ private fun FormPanel(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm),
     ) {
-
-        // Title
         Text(
-            text = "Recover Faculty Account",
+            text = if (isStudent) "Recover Student Account" else "Recover Faculty Account",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -218,45 +250,23 @@ private fun FormPanel(
 
         Spacer(Modifier.height(AskFacultySpacing.xs))
 
-        // Subtitle / instructions
         Text(
-            text = "Enter your 5-digit institutional Faculty ID below. " +
-                "A secure password reset link will be dispatched to your " +
-                "linked university email address.",
+            text = if (isStudent)
+                "Enter your Student ID, Roll No, or registered college email address to receive password recovery instructions."
+            else
+                "Enter your 5-digit institutional Faculty ID below to receive password recovery instructions.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(Modifier.height(AskFacultySpacing.lg))
+        Spacer(Modifier.height(AskFacultySpacing.md))
 
-        // ── Step indicator pills ──────────────────────────────────────────
-        Surface(
-            shape = RoundedCornerShape(AskFacultyRadius.pill),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(
-                modifier = Modifier.padding(
-                    horizontal = AskFacultySpacing.lg,
-                    vertical = AskFacultySpacing.md,
-                ),
-                verticalArrangement = Arrangement.spacedBy(AskFacultySpacing.xs),
-            ) {
-                StepHint(number = "1", label = "Enter your Faculty ID")
-                StepHint(number = "2", label = "Receive the reset link via email")
-                StepHint(number = "3", label = "Follow the link to set a new password")
-            }
-        }
-
-        Spacer(Modifier.height(AskFacultySpacing.lg))
-
-        // ── Error banner ──────────────────────────────────────────────────
         AnimatedVisibility(visible = errorMessage != null) {
             Column {
                 ErrorBanner(
-                    message = errorMessage,
+                    message = errorMessage ?: "",
                     onDismiss = onDismissError,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -264,31 +274,27 @@ private fun FormPanel(
             }
         }
 
-        // ── Faculty ID text field ─────────────────────────────────────────
         AskFacultyTextField(
-            value = facultyId,
-            onValueChange = onFacultyIdChange,
-            label = "Faculty ID",
-            placeholder = "e.g. 30456",
-            leadingIcon = Icons.Default.Badge,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            value = accountId,
+            onValueChange = onAccountIdChange,
+            label = if (isStudent) "Student ID / Roll No / Email" else "Faculty ID",
+            placeholder = if (isStudent) "e.g. 22CS104 or email" else "e.g. 30456",
+            leadingIcon = if (isStudent) Icons.Default.School else Icons.Default.Badge,
+            keyboardOptions = KeyboardOptions(keyboardType = if (isStudent) KeyboardType.Text else KeyboardType.Number),
             isError = errorMessage != null,
-            supportingText = "${facultyId.length}/5 digits",
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(Modifier.height(AskFacultySpacing.xl))
+        Spacer(Modifier.height(AskFacultySpacing.lg))
 
-        // ── Primary action ────────────────────────────────────────────────
         AskFacultyButton(
             text = "Send Reset Link",
             onClick = onSendReset,
             isLoading = isLoading,
-            enabled = facultyId.length == 5 && !isLoading,
+            enabled = accountId.isNotBlank() && !isLoading,
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // ── Secondary link ────────────────────────────────────────────────
         TextButton(
             onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
@@ -305,24 +311,19 @@ private fun FormPanel(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Success Panel — shown after reset link is dispatched
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun SuccessPanel(
-    facultyId: String,
+    accountId: String,
+    isStudent: Boolean,
     onBackToSignIn: () -> Unit,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm),
     ) {
-
-        // Large success icon with gradient ring
         Box(
             modifier = Modifier
-                .size(AskFacultyDimensions.avatarXxl)       // 96dp
+                .size(AskFacultyDimensions.avatarXxl)
                 .clip(RoundedCornerShape(AskFacultyRadius.pill))
                 .background(
                     Brush.linearGradient(
@@ -338,7 +339,7 @@ private fun SuccessPanel(
                 imageVector = Icons.Default.MarkEmailRead,
                 contentDescription = null,
                 tint = SuccessColor,
-                modifier = Modifier.size(AskFacultyDimensions.avatarMedium), // 48dp
+                modifier = Modifier.size(AskFacultyDimensions.avatarMedium),
             )
         }
 
@@ -355,32 +356,12 @@ private fun SuccessPanel(
         Spacer(Modifier.height(AskFacultySpacing.xs))
 
         Text(
-            text = "Instructions to reset your password have been sent to " +
-                "the official email registered with Faculty ID $facultyId.\n\n" +
-                "Please check your institutional inbox or spam folder.",
+            text = "Instructions to reset your password have been sent to the registered email for ID $accountId.\n\nPlease check your inbox and follow the link.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
-
-        Spacer(Modifier.height(AskFacultySpacing.xl))
-
-        // Confirmation checklist
-        Surface(
-            shape = RoundedCornerShape(AskFacultyRadius.md),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(
-                modifier = Modifier.padding(AskFacultySpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm),
-            ) {
-                ConfirmCheck(label = "Check your university email inbox")
-                ConfirmCheck(label = "Look in spam / promotions if not found")
-                ConfirmCheck(label = "Link expires in 30 minutes")
-            }
-        }
 
         Spacer(Modifier.height(AskFacultySpacing.xl))
 
@@ -391,57 +372,5 @@ private fun SuccessPanel(
         )
 
         Spacer(Modifier.height(AskFacultySpacing.xl))
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Small helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun StepHint(number: String, label: String) {
-    androidx.compose.foundation.layout.Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm),
-    ) {
-        Surface(
-            shape = RoundedCornerShape(AskFacultyRadius.pill),
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(AskFacultySpacing.xl),  // 24dp badge
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = number,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            }
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ConfirmCheck(label: String) {
-    androidx.compose.foundation.layout.Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm),
-    ) {
-        Icon(
-            imageVector = Icons.Default.CheckCircle,
-            contentDescription = null,
-            tint = SuccessColor,
-            modifier = Modifier.size(AskFacultyDimensions.iconSizeSm),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

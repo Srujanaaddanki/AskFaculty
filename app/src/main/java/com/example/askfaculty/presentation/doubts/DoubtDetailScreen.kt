@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -130,6 +132,15 @@ fun DoubtDetailScreen(
                             )
                         }
                     }
+                    // Bookmark toggle icon
+                    IconButton(onClick = viewModel::toggleBookmark) {
+                        Icon(
+                            imageVector = if (uiState.isBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = "Save Bookmark",
+                            tint = if (uiState.isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(AskFacultyDimensions.iconSize),
+                        )
+                    }
                     // AI toggle icon
                     IconButton(onClick = viewModel::toggleAiPanel) {
                         Icon(
@@ -212,14 +223,22 @@ fun DoubtDetailScreen(
                         )
                     }
 
-                    // ── 2. Status action chips ───────────────────────────────
+                    // ── 2. Status action chips / Student Resolution ─────────
                     item {
-                        StatusActionRow(
-                            currentStatus = doubt.status,
-                            onStatusChange = {
-                                viewModel.updateStatus(it)
-                            },
-                        )
+                        if (uiState.currentUserRole == Constants.ROLE_STUDENT) {
+                            StudentResolutionBanner(
+                                status = doubt.status,
+                                onMarkResolved = viewModel::markResolvedByStudent,
+                                onReopen = { viewModel.setShowReopenDialog(true) },
+                            )
+                        } else {
+                            StatusActionRow(
+                                currentStatus = doubt.status,
+                                onStatusChange = {
+                                    viewModel.updateStatus(it)
+                                },
+                            )
+                        }
                     }
 
                     // ── 3. AI Suggestion Panel ───────────────────────────────
@@ -251,8 +270,12 @@ fun DoubtDetailScreen(
                         MessageBubble(
                             message = message,
                             isFaculty = message.senderRole == Constants.SENDER_FACULTY,
+                            currentUserRole = uiState.currentUserRole,
                             onMarkOfficial = { isOfficial ->
                                 viewModel.markOfficial(message.id, isOfficial)
+                            },
+                            onToggleHelpful = {
+                                viewModel.toggleHelpful(message.id)
                             },
                         )
                     }
@@ -357,6 +380,13 @@ fun DoubtDetailScreen(
                 Spacer(Modifier.height(AskFacultySpacing.lg))
             }
         }
+    }
+
+    if (uiState.showReopenDialog) {
+        ReopenDoubtDialog(
+            onDismiss = { viewModel.setShowReopenDialog(false) },
+            onConfirm = viewModel::reopenDoubt,
+        )
     }
 }
 
@@ -473,6 +503,42 @@ private fun QuestionCard(doubt: com.example.askfaculty.domain.model.Doubt) {
                         modifier = Modifier.padding(AskFacultySpacing.md),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
+                }
+
+                if (doubt.codeSnippet.isNotBlank()) {
+                    Spacer(Modifier.height(AskFacultySpacing.sm))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(AskFacultyRadius.md),
+                        color = Color(0xFF1E1E2E),
+                    ) {
+                        Column(modifier = Modifier.padding(AskFacultySpacing.md)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = doubt.codeLanguage.ifBlank { "Code Snippet" }.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFA6E3A1),
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Code,
+                                    contentDescription = null,
+                                    tint = Color(0xFFA6E3A1),
+                                    modifier = Modifier.size(AskFacultyDimensions.iconSizeXs),
+                                )
+                            }
+                            Spacer(Modifier.height(AskFacultySpacing.xs))
+                            Text(
+                                text = doubt.codeSnippet,
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                                color = Color(0xFFCDD6F4),
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(AskFacultySpacing.sm))
@@ -594,6 +660,183 @@ private fun ThreadDivider() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Student Resolution Banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun StudentResolutionBanner(
+    status: String,
+    onMarkResolved: () -> Unit,
+    onReopen: () -> Unit,
+) {
+    when (status) {
+        Constants.STATUS_ANSWERED -> {
+            Card(
+                shape = RoundedCornerShape(AskFacultyRadius.lg),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(AskFacultySpacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AskFacultySpacing.md),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Faculty Responded",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        Text(
+                            text = "Did this answer resolve your question completely?",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                        )
+                    }
+                    Button(
+                        onClick = onMarkResolved,
+                        shape = RoundedCornerShape(AskFacultyRadius.md),
+                        contentPadding = PaddingValues(horizontal = AskFacultySpacing.md, vertical = AskFacultySpacing.xs),
+                    ) {
+                        Text("Resolved", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+        }
+        Constants.STATUS_RESOLVED -> {
+            Card(
+                shape = RoundedCornerShape(AskFacultyRadius.lg),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF7C3AED).copy(alpha = 0.12f),
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(AskFacultySpacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AskFacultySpacing.md),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Verified,
+                        contentDescription = null,
+                        tint = Color(0xFF7C3AED),
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Doubt Resolved",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "Need further clarification on this topic?",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = onReopen,
+                        shape = RoundedCornerShape(AskFacultyRadius.md),
+                        contentPadding = PaddingValues(horizontal = AskFacultySpacing.md, vertical = AskFacultySpacing.xs),
+                    ) {
+                        Text("Reopen", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+        }
+        else -> {
+            Surface(
+                shape = RoundedCornerShape(AskFacultyRadius.md),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AskFacultySpacing.md, vertical = AskFacultySpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.HourglassEmpty,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(AskFacultyDimensions.iconSizeSm),
+                    )
+                    Text(
+                        text = "Pending faculty review. You will be notified when an answer is posted.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reopen Doubt Dialog
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ReopenDoubtDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var reason by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Reopen Doubt") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AskFacultySpacing.sm)) {
+                Text(
+                    "Please describe what further clarification or guidance you need from faculty:",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    placeholder = { Text("Reason for reopening...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    shape = RoundedCornerShape(AskFacultyRadius.md),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (reason.isNotBlank()) onConfirm(reason)
+                },
+                enabled = reason.isNotBlank(),
+            ) {
+                Text("Reopen")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Message Bubble
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -601,7 +844,9 @@ private fun ThreadDivider() {
 private fun MessageBubble(
     message: Message,
     isFaculty: Boolean,
+    currentUserRole: String,
     onMarkOfficial: (Boolean) -> Unit,
+    onToggleHelpful: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -641,7 +886,6 @@ private fun MessageBubble(
         }
 
         // ── Bubble card ──────────────────────────────────────────────────────
-        // Official answers get a green left border treatment
         val bubbleModifier = if (message.isOfficial && !isFaculty) {
             Modifier
                 .widthIn(max = 300.dp)
@@ -701,6 +945,23 @@ private fun MessageBubble(
                     )
                 }
 
+                // Code snippet if attached to message
+                if (message.codeSnippet.isNotBlank()) {
+                    Spacer(Modifier.height(AskFacultySpacing.xs))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(AskFacultyRadius.sm),
+                        color = Color(0xFF1E1E2E),
+                    ) {
+                        Text(
+                            text = message.codeSnippet,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                            color = Color(0xFFCDD6F4),
+                            modifier = Modifier.padding(AskFacultySpacing.sm),
+                        )
+                    }
+                }
+
                 // Attachment pill
                 if (message.attachmentUrl.isNotBlank()) {
                     Spacer(Modifier.height(AskFacultySpacing.sm))
@@ -737,7 +998,7 @@ private fun MessageBubble(
 
                 Spacer(Modifier.height(AskFacultySpacing.xs))
 
-                // Timestamp + mark official
+                // Timestamp + actions
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -751,24 +1012,52 @@ private fun MessageBubble(
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
-                    if (isFaculty) {
-                        TextButton(
-                            onClick = { onMarkOfficial(!message.isOfficial) },
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Icon(
-                                imageVector = if (message.isOfficial) Icons.Default.StarBorder else Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(AskFacultyDimensions.iconSizeXs),
-                                tint = if (message.isOfficial) OfficialAnswer else Color.White.copy(alpha = 0.75f),
-                            )
-                            Spacer(Modifier.width(AskFacultySpacing.xs))
-                            Text(
-                                text = if (message.isOfficial) "Remove" else "Mark Official",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (message.isOfficial) OfficialAnswer else Color.White.copy(alpha = 0.75f),
-                            )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Helpful button for faculty responses
+                        if (isFaculty) {
+                            IconButton(
+                                onClick = onToggleHelpful,
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (message.isHelpful) Icons.Default.ThumbUp else Icons.Outlined.ThumbUp,
+                                        contentDescription = "Helpful",
+                                        tint = if (message.isHelpful) Color(0xFFFDE047) else Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(AskFacultyDimensions.iconSizeXs),
+                                    )
+                                    if (message.helpfulCount > 0) {
+                                        Spacer(Modifier.width(2.dp))
+                                        Text(
+                                            text = "${message.helpfulCount}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isFaculty && currentUserRole == Constants.ROLE_FACULTY) {
+                            TextButton(
+                                onClick = { onMarkOfficial(!message.isOfficial) },
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Icon(
+                                    imageVector = if (message.isOfficial) Icons.Default.StarBorder else Icons.Default.Star,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AskFacultyDimensions.iconSizeXs),
+                                    tint = if (message.isOfficial) OfficialAnswer else Color.White.copy(alpha = 0.75f),
+                                )
+                                Spacer(Modifier.width(AskFacultySpacing.xs))
+                                Text(
+                                    text = if (message.isOfficial) "Remove" else "Mark Official",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (message.isOfficial) OfficialAnswer else Color.White.copy(alpha = 0.75f),
+                                )
+                            }
                         }
                     }
                 }

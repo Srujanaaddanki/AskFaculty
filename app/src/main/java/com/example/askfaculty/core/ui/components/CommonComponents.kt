@@ -351,7 +351,7 @@ fun AskFacultyTextField(
 fun AskFacultySearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
+    onSearch: () -> Unit = {},
     modifier: Modifier = Modifier,
     placeholder: String = "Search...",
 ) {
@@ -392,10 +392,18 @@ fun AskFacultySearchBar(
 
 // Alias
 @Composable
+fun AskFacultySearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Search...",
+) = AskFacultySearchBar(query, onQueryChange, {}, modifier, placeholder)
+
+@Composable
 fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
+    onSearch: () -> Unit = {},
     placeholder: String = "Search...",
     modifier: Modifier = Modifier,
 ) = AskFacultySearchBar(query, onQueryChange, onSearch, modifier, placeholder)

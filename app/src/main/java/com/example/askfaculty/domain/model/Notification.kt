@@ -23,6 +23,13 @@ data class DashboardStats(
     val activeCommunities: Int = 0,
 )
 
+data class StudentDashboardStats(
+    val pendingDoubts: Int = 0,
+    val answeredDoubts: Int = 0,
+    val resolvedDoubts: Int = 0,
+    val joinedCommunities: Int = 0,
+)
+
 data class FrequentTopic(
     val topic: String = "",
     val doubtCount: Int = 0,

@@ -12,6 +12,7 @@ data class Community(
     val coverImageUrl: String = "",
     val memberCount: Int = 0,
     val postCount: Int = 0,
+    val members: List<String> = emptyList(),
     val isActive: Boolean = true,
     val isPublic: Boolean = true,
     val createdAt: Timestamp? = null,
@@ -26,6 +27,7 @@ data class Post(
     val authorRole: String = "",
     val authorPhotoUrl: String = "",
     val content: String = "",
+    val codeSnippet: String = "",
     val attachmentUrl: String = "",
     val attachmentType: String = "",
     val attachmentName: String = "",
@@ -36,4 +38,17 @@ data class Post(
     val replyCount: Int = 0,
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null,
+)
+
+data class PostReply(
+    val id: String = "",
+    val postId: String = "",
+    val communityId: String = "",
+    val authorId: String = "",
+    val authorName: String = "",
+    val authorRole: String = "",
+    val authorPhotoUrl: String = "",
+    val content: String = "",
+    val isOfficial: Boolean = false,
+    val createdAt: Timestamp? = null,
 )

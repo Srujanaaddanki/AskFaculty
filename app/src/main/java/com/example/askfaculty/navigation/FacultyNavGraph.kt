@@ -2,10 +2,6 @@ package com.example.askfaculty.navigation
 
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -16,12 +12,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.askfaculty.core.util.Constants
+import com.example.askfaculty.presentation.ai.AiAssistantScreen
 import com.example.askfaculty.presentation.auth.ForgotPasswordScreen
 import com.example.askfaculty.presentation.auth.LoginScreen
+import com.example.askfaculty.presentation.auth.RegisterScreen
 import com.example.askfaculty.presentation.communities.CommunitiesScreen
 import com.example.askfaculty.presentation.communities.CommunityDetailScreen
 import com.example.askfaculty.presentation.communities.CreateCommunityScreen
 import com.example.askfaculty.presentation.communities.CreatePostScreen
+import com.example.askfaculty.presentation.doubts.AskDoubtScreen
 import com.example.askfaculty.presentation.doubts.DoubtDetailScreen
 import com.example.askfaculty.presentation.doubts.DoubtsScreen
 import com.example.askfaculty.presentation.home.HomeScreen
@@ -30,11 +30,17 @@ import com.example.askfaculty.presentation.onboarding.OnboardingScreen
 import com.example.askfaculty.presentation.profile.AvailabilityScreen
 import com.example.askfaculty.presentation.profile.EditProfileScreen
 import com.example.askfaculty.presentation.profile.ProfileScreen
+import com.example.askfaculty.presentation.resources.ResourcesScreen
 import com.example.askfaculty.presentation.search.SearchScreen
 import com.example.askfaculty.presentation.settings.SettingsScreen
 import com.example.askfaculty.presentation.splash.SplashScreen
+import com.example.askfaculty.presentation.student.SavedScreen
+import com.example.askfaculty.presentation.student.StudentCommunitiesScreen
+import com.example.askfaculty.presentation.student.StudentDoubtsScreen
+import com.example.askfaculty.presentation.student.StudentHomeScreen
+import com.example.askfaculty.presentation.student.StudentProfileScreen
 
-val bottomNavRoutes = setOf(
+val facultyBottomNavRoutes = setOf(
     Routes.Home.route,
     Routes.Doubts.route,
     Routes.Communities.route,
@@ -42,21 +48,35 @@ val bottomNavRoutes = setOf(
     Routes.Profile.route,
 )
 
+val studentBottomNavRoutes = setOf(
+    Routes.StudentHome.route,
+    Routes.StudentDoubts.route,
+    Routes.StudentCommunities.route,
+    Routes.StudentResources.route,
+    Routes.StudentProfile.route,
+)
+
 @Composable
 fun FacultyNavGraph(
     navController: NavHostController,
     startDestination: String = Routes.Splash.route,
     unreadNotifications: Int,
+    isStudent: Boolean = false,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute in bottomNavRoutes
+    val showBottomBar = if (isStudent) {
+        currentRoute in studentBottomNavRoutes
+    } else {
+        currentRoute in facultyBottomNavRoutes
+    }
 
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
                 BottomNavBar(
                     currentRoute = currentRoute,
+                    isStudent = isStudent,
                     unreadNotifications = unreadNotifications,
                     onNavigate = { route ->
                         navController.navigate(route) {
@@ -93,8 +113,13 @@ fun FacultyNavGraph(
                             popUpTo(Routes.Splash.route) { inclusive = true }
                         }
                     },
-                    onNavigateToHome = {
+                    onNavigateToFacultyHome = {
                         navController.navigate(Routes.Home.route) {
+                            popUpTo(Routes.Splash.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToStudentHome = {
+                        navController.navigate(Routes.StudentHome.route) {
                             popUpTo(Routes.Splash.route) { inclusive = true }
                         }
                     },
@@ -114,19 +139,43 @@ fun FacultyNavGraph(
             // Auth
             composable(Routes.Login.route) {
                 LoginScreen(
-                    onLoginSuccess = {
-                        navController.navigate(Routes.Home.route) {
+                    onLoginSuccess = { user ->
+                        val targetRoute = if (user.role == Constants.ROLE_STUDENT) {
+                            Routes.StudentHome.route
+                        } else {
+                            Routes.Home.route
+                        }
+                        navController.navigate(targetRoute) {
                             popUpTo(Routes.Login.route) { inclusive = true }
                         }
                     },
-                    onForgotPassword = { navController.navigate(Routes.ForgotPassword.route) },
+                    onNavigateToRegister = {
+                        navController.navigate(Routes.Register.route)
+                    },
+                    onForgotPassword = { _ ->
+                        navController.navigate(Routes.ForgotPassword.route)
+                    },
                 )
             }
+
+            composable(Routes.Register.route) {
+                RegisterScreen(
+                    onRegisterSuccess = { _ ->
+                        navController.navigate(Routes.StudentHome.route) {
+                            popUpTo(Routes.Register.route) { inclusive = true }
+                        }
+                    },
+                    onBackToLogin = {
+                        navController.popBackStack()
+                    },
+                )
+            }
+
             composable(Routes.ForgotPassword.route) {
                 ForgotPasswordScreen(onBack = { navController.popBackStack() })
             }
 
-            // Main bottom nav destinations
+            // ── Faculty Main bottom nav destinations ─────────────────────────
             composable(Routes.Home.route) {
                 HomeScreen(
                     onDoubtClick = { doubtId -> navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) },
@@ -164,7 +213,79 @@ fun FacultyNavGraph(
                 )
             }
 
-            // Nested
+            // ── Student Main bottom nav destinations ─────────────────────────
+            composable(Routes.StudentHome.route) {
+                StudentHomeScreen(
+                    onAskDoubtClick = { navController.navigate(Routes.AskDoubt.route) },
+                    onDoubtClick = { doubtId -> navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) },
+                    onCommunityClick = { communityId -> navController.navigate(Routes.CommunityDetail.createRoute(communityId)) },
+                    onSearchClick = { navController.navigate(Routes.Search.route) },
+                    onNotificationsClick = { navController.navigate(Routes.Notifications.route) },
+                    onViewAllDoubts = { navController.navigate(Routes.StudentDoubts.route) },
+                    onViewAllCommunities = { navController.navigate(Routes.StudentCommunities.route) },
+                    onViewResources = { navController.navigate(Routes.StudentResources.route) },
+                )
+            }
+
+            composable(Routes.StudentDoubts.route) {
+                StudentDoubtsScreen(
+                    onDoubtClick = { doubtId -> navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) },
+                    onAskDoubtClick = { navController.navigate(Routes.AskDoubt.route) },
+                )
+            }
+
+            composable(Routes.StudentCommunities.route) {
+                StudentCommunitiesScreen(
+                    onCommunityClick = { communityId -> navController.navigate(Routes.CommunityDetail.createRoute(communityId)) },
+                )
+            }
+
+            composable(Routes.StudentResources.route) {
+                ResourcesScreen()
+            }
+
+            composable(Routes.StudentSaved.route) {
+                SavedScreen(
+                    onDoubtClick = { doubtId -> navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) },
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.StudentProfile.route) {
+                StudentProfileScreen(
+                    onNavigateToSaved = { navController.navigate(Routes.StudentSaved.route) },
+                    onNavigateToAi = { navController.navigate(Routes.AiAssistant.route) },
+                    onNavigateToResources = { navController.navigate(Routes.StudentResources.route) },
+                    onLogout = {
+                        navController.navigate(Routes.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            // ── Student Action destinations ──────────────────────────────────
+            composable(Routes.AskDoubt.route) {
+                AskDoubtScreen(
+                    onBack = { navController.popBackStack() },
+                    onDoubtSubmitted = { doubtId ->
+                        navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) {
+                            popUpTo(Routes.AskDoubt.route) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            composable(Routes.AiAssistant.route) {
+                AiAssistantScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onEscalateToFaculty = { _ ->
+                        navController.navigate(Routes.AskDoubt.route)
+                    },
+                )
+            }
+
+            // ── Shared Nested Destinations ───────────────────────────────────
             composable(Routes.Settings.route) {
                 SettingsScreen(onBack = { navController.popBackStack() })
             }
@@ -202,7 +323,11 @@ fun FacultyNavGraph(
                 AvailabilityScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.Search.route) {
-                SearchScreen(onBack = { navController.popBackStack() }, onDoubtClick = { doubtId -> navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) })
+                SearchScreen(
+                    onBack = { navController.popBackStack() },
+                    onDoubtClick = { doubtId -> navController.navigate(Routes.DoubtDetail.createRoute(doubtId)) },
+                    onCommunityClick = { communityId -> navController.navigate(Routes.CommunityDetail.createRoute(communityId)) },
+                )
             }
         }
     }

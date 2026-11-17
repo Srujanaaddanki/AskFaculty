@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.MarkChatRead
 import androidx.compose.material.icons.filled.School
@@ -58,10 +59,6 @@ import com.example.askfaculty.ui.theme.AskFacultyRadius
 import com.example.askfaculty.ui.theme.AskFacultySpacing
 import kotlinx.coroutines.launch
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data model
-// ─────────────────────────────────────────────────────────────────────────────
-
 private data class OnboardingPageData(
     val title: String,
     val description: String,
@@ -70,10 +67,6 @@ private data class OnboardingPageData(
     val accentColor: Color,
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Root screen
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
@@ -81,24 +74,24 @@ fun OnboardingScreen(
 ) {
     val pages = listOf(
         OnboardingPageData(
-            badge       = "CONTINUOUS MENTORSHIP",
-            title       = "Stay Connected Beyond the Classroom",
-            description = "Give students a structured, dignified channel to reach you when questions arise after class. Keep learning uninterrupted.",
+            badge       = "ACADEMIC DOUBT RESOLUTION",
+            title       = "Ask Doubts & Learn Without Barriers",
+            description = "Submit academic questions directly to subject professors, attach code snippets and documents, and receive official faculty answers.",
             icon        = Icons.Default.Forum,
             accentColor = MaterialTheme.colorScheme.primary,
         ),
         OnboardingPageData(
-            badge       = "PRIORITY WORKFLOW",
-            title       = "Manage Every Doubt in One Place",
-            description = "Review questions, respond to follow-ups, prioritize urgent inquiries, and keep conversations organized without email clutter.",
+            badge       = "STRUCTURED PROGRESS",
+            title       = "Track Every Question Seamlessly",
+            description = "Stay informed from Pending to Answered and Resolved status. Engage in follow-up discussions and mark helpful solutions.",
             icon        = Icons.Default.MarkChatRead,
             accentColor = MaterialTheme.colorScheme.secondary,
         ),
         OnboardingPageData(
-            badge       = "KNOWLEDGE REPOSITORIES",
-            title       = "Turn Questions Into Knowledge",
-            description = "Create faculty communities, publish official answers, share lecture materials, and build a reusable academic knowledge space.",
-            icon        = Icons.AutoMirrored.Filled.MenuBook,
+            badge       = "SPACES & AI STUDY ASSISTANT",
+            title       = "Collaborate with Spaces & AI",
+            description = "Join subject spaces, browse lecture resources and announcements, rephrase questions with AI, and practice conceptual quizzes.",
+            icon        = Icons.Default.AutoAwesome,
             accentColor = MaterialTheme.colorScheme.tertiary,
         ),
     )
@@ -108,7 +101,6 @@ fun OnboardingScreen(
     val currentPage = pagerState.currentPage
     val currentAccent = pages[currentPage].accentColor
 
-    // Full-screen gradient transitions with the page's accent color
     val backgroundGradient = Brush.verticalGradient(
         colors = listOf(
             currentAccent.copy(alpha = 0.18f),
@@ -122,7 +114,6 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        // Full-screen tinted gradient overlay per page
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -136,14 +127,12 @@ fun OnboardingScreen(
                 .navigationBarsPadding()
                 .padding(horizontal = AskFacultySpacing.xl, vertical = AskFacultySpacing.lg),
         ) {
-
-            // ── Top bar ────────────────────────────────────────────────────
+            // Top bar
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
-                // Branding mark
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -175,7 +164,6 @@ fun OnboardingScreen(
                     )
                 }
 
-                // Skip button — hidden on last page
                 AnimatedVisibility(
                     visible = currentPage < pages.size - 1,
                     enter   = fadeIn(tween(300)),
@@ -195,7 +183,6 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(AskFacultySpacing.xl))
 
-            // ── Pager ──────────────────────────────────────────────────────
             HorizontalPager(
                 state    = pagerState,
                 modifier = Modifier
@@ -208,13 +195,11 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(AskFacultySpacing.xl))
 
-            // ── Bottom controls ────────────────────────────────────────────
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
-                // Animated dot indicators
                 Row(horizontalArrangement = Arrangement.spacedBy(AskFacultySpacing.xs + 2.dp)) {
                     repeat(pages.size) { index ->
                         OnboardingDotIndicator(
@@ -224,7 +209,6 @@ fun OnboardingScreen(
                     }
                 }
 
-                // Next / Get Started
                 if (currentPage < pages.size - 1) {
                     Button(
                         onClick = {
@@ -263,10 +247,6 @@ fun OnboardingScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page content composable
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun OnboardingPageContent(page: OnboardingPageData) {
     Column(
@@ -276,12 +256,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-
-        // ── Nested gradient ring illustration ──────────────────────────────
-        //  Outer ring  200dp  — subtle border + very light accent fill
-        //  Middle ring 148dp  — stronger alpha ring (gradient)
-        //  Inner ring  100dp  — solid accent tinted fill
-        //  Icon        64dp
         Box(
             modifier         = Modifier
                 .size(200.dp)
@@ -306,7 +280,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            // Middle gradient ring
             Box(
                 modifier         = Modifier
                     .size(148.dp)
@@ -331,7 +304,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                // Inner solid ring
                 Box(
                     modifier         = Modifier
                         .size(100.dp)
@@ -358,7 +330,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
 
         Spacer(modifier = Modifier.height(AskFacultySpacing.xxxl))
 
-        // ── Badge chip ────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(AskFacultyRadius.xs))
@@ -381,7 +352,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
 
         Spacer(modifier = Modifier.height(AskFacultySpacing.lg))
 
-        // ── Title ─────────────────────────────────────────────────────────
         Text(
             text       = page.title,
             style      = MaterialTheme.typography.headlineSmall,
@@ -393,7 +363,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
 
         Spacer(modifier = Modifier.height(AskFacultySpacing.md))
 
-        // ── Description ───────────────────────────────────────────────────
         Text(
             text       = page.description,
             style      = MaterialTheme.typography.bodyMedium,
@@ -403,10 +372,6 @@ private fun OnboardingPageContent(page: OnboardingPageData) {
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Animated dot indicator
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun OnboardingDotIndicator(

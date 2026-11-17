@@ -4,7 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,11 +27,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,11 +42,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,24 +74,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.askfaculty.core.ui.components.AskFacultyButton
 import com.example.askfaculty.core.ui.components.AskFacultyLogo
 import com.example.askfaculty.core.ui.components.ErrorBanner
+import com.example.askfaculty.core.util.Constants
+import com.example.askfaculty.domain.model.User
 import com.example.askfaculty.ui.theme.AskFacultyRadius
 import com.example.askfaculty.ui.theme.AskFacultySpacing
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onForgotPassword: () -> Unit,
+    onLoginSuccess: (User) -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onForgotPassword: (isStudent: Boolean) -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
+    // Tab: 0 -> Student, 1 -> Faculty
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    // Student fields
+    var studentId by remember { mutableStateOf("22CS104") }
+    var studentPassword by remember { mutableStateOf("Student@123") }
+    var studentPasswordVisible by remember { mutableStateOf(false) }
+
+    // Faculty fields
     var facultyId by remember { mutableStateOf("30456") }
-    var password by remember { mutableStateOf("Gow@1415") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var facultyPassword by remember { mutableStateOf("Gow@1415") }
+    var facultyPasswordVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.user) {
-        if (uiState.user != null) onLoginSuccess()
+        uiState.user?.let { onLoginSuccess(it) }
     }
 
     Scaffold(
@@ -96,16 +116,16 @@ fun LoginScreen(
                 .imePadding(),
             contentAlignment = Alignment.Center,
         ) {
-            // Subtle background gradient at top
+            // Subtle top background gradient
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(280.dp)
+                    .height(300.dp)
                     .align(Alignment.TopCenter)
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
                                 Color.Transparent,
                             )
                         )
@@ -121,12 +141,67 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Spacer(Modifier.height(AskFacultySpacing.xl))
+                Spacer(Modifier.height(AskFacultySpacing.md))
 
                 // ── Brand Logo ─────────────────────────────────────────
-                AskFacultyLogo(iconSize = 72.dp, showSubtitle = true)
+                AskFacultyLogo(iconSize = 64.dp, showSubtitle = true)
 
-                Spacer(Modifier.height(AskFacultySpacing.xl))
+                Spacer(Modifier.height(AskFacultySpacing.lg))
+
+                // ── Role Tab Selector (Student vs Faculty) ─────────────
+                Surface(
+                    shape = RoundedCornerShape(AskFacultyRadius.lg),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier
+                                    .tabIndicatorOffset(tabPositions[selectedTab])
+                                    .clip(RoundedCornerShape(AskFacultyRadius.pill)),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                        divider = {},
+                    ) {
+                        Tab(
+                            selected = selectedTab == 0,
+                            onClick = { selectedTab = 0; viewModel.clearError() },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.School,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(AskFacultySpacing.xs))
+                                    Text("Student Portal", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal)
+                                }
+                            }
+                        )
+                        Tab(
+                            selected = selectedTab == 1,
+                            onClick = { selectedTab = 1; viewModel.clearError() },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Badge,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(AskFacultySpacing.xs))
+                                    Text("Faculty Portal", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal)
+                                }
+                            }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(AskFacultySpacing.md))
 
                 // ── Sign-In Card ───────────────────────────────────────
                 Card(
@@ -145,205 +220,355 @@ fun LoginScreen(
                             .fillMaxWidth()
                             .padding(AskFacultySpacing.xl),
                     ) {
-                        // Card header
-                        Text(
-                            text       = "Faculty Sign In",
-                            style      = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color      = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(Modifier.height(AskFacultySpacing.xs))
-                        Text(
-                            text  = "Enter your 5-digit institutional ID and password",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        if (selectedTab == 0) {
+                            // ── STUDENT LOGIN ──
+                            Text(
+                                text       = "Student Sign In",
+                                style      = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color      = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(Modifier.height(AskFacultySpacing.xs))
+                            Text(
+                                text  = "Enter your College ID / Roll No and password",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
 
-                        Spacer(Modifier.height(AskFacultySpacing.xl))
+                            Spacer(Modifier.height(AskFacultySpacing.lg))
 
-                        // Faculty ID field
-                        OutlinedTextField(
-                            value = facultyId,
-                            onValueChange = { input ->
-                                val filtered = input.filter { it.isDigit() }.take(5)
-                                facultyId = filtered
-                                viewModel.clearError()
-                            },
-                            label       = { Text("Faculty ID") },
-                            placeholder = { Text("5-digit ID  e.g. 10245") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector        = Icons.Default.Badge,
-                                    contentDescription = null,
-                                    tint               = MaterialTheme.colorScheme.primary,
-                                    modifier           = Modifier.size(24.dp),
-                                )
-                            },
-                            supportingText = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        text  = if (facultyId.isNotEmpty() && facultyId.length < 5) "Must be 5 digits" else "",
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.labelSmall,
-                                    )
-                                    Text(
-                                        text  = "${facultyId.length}/5",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction    = ImeAction.Next,
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                            ),
-                            shape      = RoundedCornerShape(AskFacultyRadius.md),
-                            singleLine = true,
-                            modifier   = Modifier.fillMaxWidth(),
-                            isError    = uiState.error != null,
-                            colors     = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor    = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor  = MaterialTheme.colorScheme.outline,
-                                errorBorderColor      = MaterialTheme.colorScheme.error,
-                                focusedLabelColor     = MaterialTheme.colorScheme.primary,
-                                cursorColor           = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-
-                        Spacer(Modifier.height(AskFacultySpacing.md))
-
-                        // Password field
-                        OutlinedTextField(
-                            value         = password,
-                            onValueChange = { password = it; viewModel.clearError() },
-                            label         = { Text("Password") },
-                            leadingIcon   = {
-                                Icon(
-                                    imageVector        = Icons.Default.Lock,
-                                    contentDescription = null,
-                                    tint               = MaterialTheme.colorScheme.primary,
-                                    modifier           = Modifier.size(24.dp),
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            OutlinedTextField(
+                                value = studentId,
+                                onValueChange = { studentId = it; viewModel.clearError() },
+                                label = { Text("Student ID / Roll No") },
+                                placeholder = { Text("e.g. 22CS104 or email") },
+                                leadingIcon = {
                                     Icon(
-                                        imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        Icons.Default.School,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp),
                                     )
-                                }
-                            },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction    = ImeAction.Done,
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    focusManager.clearFocus()
-                                    if (facultyId.length == 5 && password.isNotBlank()) {
-                                        viewModel.loginWithFacultyId(facultyId, password)
+                                },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Next,
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                                ),
+                                shape = RoundedCornerShape(AskFacultyRadius.md),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+
+                            Spacer(Modifier.height(AskFacultySpacing.md))
+
+                            OutlinedTextField(
+                                value = studentPassword,
+                                onValueChange = { studentPassword = it; viewModel.clearError() },
+                                label = { Text("Password") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = { studentPasswordVisible = !studentPasswordVisible }) {
+                                        Icon(
+                                            imageVector = if (studentPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = if (studentPasswordVisible) "Hide password" else "Show password",
+                                        )
                                     }
                                 },
-                            ),
-                            shape      = RoundedCornerShape(AskFacultyRadius.md),
-                            singleLine = true,
-                            modifier   = Modifier.fillMaxWidth(),
-                            isError    = uiState.error != null,
-                            colors     = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor    = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor  = MaterialTheme.colorScheme.outline,
-                                errorBorderColor      = MaterialTheme.colorScheme.error,
-                                focusedLabelColor     = MaterialTheme.colorScheme.primary,
-                                cursorColor           = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
+                                visualTransformation = if (studentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Password,
+                                    imeAction = ImeAction.Done,
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        focusManager.clearFocus()
+                                        if (studentId.isNotBlank() && studentPassword.isNotBlank()) {
+                                            viewModel.loginWithStudentId(studentId, studentPassword)
+                                        }
+                                    },
+                                ),
+                                shape = RoundedCornerShape(AskFacultyRadius.md),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
 
-                        // Error banner
-                        AnimatedVisibility(
-                            visible = uiState.error != null,
-                            enter   = fadeIn(),
-                            exit    = fadeOut(),
-                        ) {
-                            Column {
-                                Spacer(Modifier.height(AskFacultySpacing.md))
-                                ErrorBanner(
-                                    message   = uiState.error ?: "",
-                                    onDismiss = viewModel::clearError,
-                                )
+                            // Forgot password row
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(top = AskFacultySpacing.xs),
+                                contentAlignment = Alignment.CenterEnd,
+                            ) {
+                                TextButton(
+                                    onClick = { onForgotPassword(true) },
+                                    contentPadding = PaddingValues(horizontal = AskFacultySpacing.xs, vertical = 2.dp),
+                                ) {
+                                    Text(
+                                        text = "Forgot Password?",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
                             }
-                        }
 
-                        // Forgot password
-                        Box(
-                            modifier         = Modifier
-                                .fillMaxWidth()
-                                .padding(top = AskFacultySpacing.xs),
-                            contentAlignment = Alignment.CenterEnd,
-                        ) {
-                            TextButton(
-                                onClick        = onForgotPassword,
-                                contentPadding = PaddingValues(horizontal = AskFacultySpacing.xs, vertical = 2.dp),
+                            // Error banner
+                            AnimatedVisibility(
+                                visible = uiState.error != null,
+                                enter = fadeIn(),
+                                exit = fadeOut(),
+                            ) {
+                                Column {
+                                    Spacer(Modifier.height(AskFacultySpacing.sm))
+                                    ErrorBanner(message = uiState.error ?: "", onDismiss = viewModel::clearError)
+                                }
+                            }
+
+                            Spacer(Modifier.height(AskFacultySpacing.md))
+
+                            AskFacultyButton(
+                                text = "Sign In as Student",
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    viewModel.loginWithStudentId(studentId, studentPassword)
+                                },
+                                isLoading = uiState.isLoading,
+                                enabled = studentId.isNotBlank() && studentPassword.isNotBlank(),
+                            )
+
+                            Spacer(Modifier.height(AskFacultySpacing.md))
+
+                            // Register navigation link
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text       = "Forgot Password?",
-                                    style      = MaterialTheme.typography.labelLarge,
-                                    color      = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.SemiBold,
+                                    text = "Don't have an account?",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                TextButton(onClick = onNavigateToRegister) {
+                                    Text(
+                                        text = "Register as Student",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
+
+                        } else {
+                            // ── FACULTY LOGIN ──
+                            Text(
+                                text       = "Faculty Sign In",
+                                style      = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color      = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(Modifier.height(AskFacultySpacing.xs))
+                            Text(
+                                text  = "Enter your 5-digit institutional ID and password",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+
+                            Spacer(Modifier.height(AskFacultySpacing.lg))
+
+                            OutlinedTextField(
+                                value = facultyId,
+                                onValueChange = { input ->
+                                    val filtered = input.filter { it.isDigit() }.take(5)
+                                    facultyId = filtered
+                                    viewModel.clearError()
+                                },
+                                label = { Text("Faculty ID") },
+                                placeholder = { Text("5-digit ID  e.g. 30456") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Badge,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                },
+                                supportingText = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Text(
+                                            text = if (facultyId.isNotEmpty() && facultyId.length < 5) "Must be 5 digits" else "",
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                        Text(
+                                            text = "${facultyId.length}/5",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next,
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                                ),
+                                shape = RoundedCornerShape(AskFacultyRadius.md),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+
+                            Spacer(Modifier.height(AskFacultySpacing.sm))
+
+                            OutlinedTextField(
+                                value = facultyPassword,
+                                onValueChange = { facultyPassword = it; viewModel.clearError() },
+                                label = { Text("Password") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = { facultyPasswordVisible = !facultyPasswordVisible }) {
+                                        Icon(
+                                            imageVector = if (facultyPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = if (facultyPasswordVisible) "Hide password" else "Show password",
+                                        )
+                                    }
+                                },
+                                visualTransformation = if (facultyPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Password,
+                                    imeAction = ImeAction.Done,
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        focusManager.clearFocus()
+                                        if (facultyId.length == 5 && facultyPassword.isNotBlank()) {
+                                            viewModel.loginWithFacultyId(facultyId, facultyPassword)
+                                        }
+                                    },
+                                ),
+                                shape = RoundedCornerShape(AskFacultyRadius.md),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(top = AskFacultySpacing.xs),
+                                contentAlignment = Alignment.CenterEnd,
+                            ) {
+                                TextButton(
+                                    onClick = { onForgotPassword(false) },
+                                    contentPadding = PaddingValues(horizontal = AskFacultySpacing.xs, vertical = 2.dp),
+                                ) {
+                                    Text(
+                                        text = "Forgot Password?",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                visible = uiState.error != null,
+                                enter = fadeIn(),
+                                exit = fadeOut(),
+                            ) {
+                                Column {
+                                    Spacer(Modifier.height(AskFacultySpacing.sm))
+                                    ErrorBanner(message = uiState.error ?: "", onDismiss = viewModel::clearError)
+                                }
+                            }
+
+                            Spacer(Modifier.height(AskFacultySpacing.md))
+
+                            AskFacultyButton(
+                                text = "Sign In as Faculty",
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    viewModel.loginWithFacultyId(facultyId, facultyPassword)
+                                },
+                                isLoading = uiState.isLoading,
+                                enabled = facultyId.length == 5 && facultyPassword.isNotBlank(),
+                            )
                         }
-
-                        Spacer(Modifier.height(AskFacultySpacing.lg))
-
-                        // Sign In button
-                        AskFacultyButton(
-                            text      = "Sign In as Faculty",
-                            onClick   = {
-                                focusManager.clearFocus()
-                                viewModel.loginWithFacultyId(facultyId, password)
-                            },
-                            isLoading = uiState.isLoading,
-                            enabled   = facultyId.length == 5 && password.isNotBlank(),
-                        )
                     }
                 }
 
-                Spacer(Modifier.height(AskFacultySpacing.xl))
+                Spacer(Modifier.height(AskFacultySpacing.lg))
 
-                // Security notice
+                // Demo quick login pills for evaluation
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape    = RoundedCornerShape(AskFacultyRadius.md),
-                    color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(AskFacultyRadius.lg),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 ) {
-                    Row(
-                        modifier              = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AskFacultySpacing.md, vertical = AskFacultySpacing.sm),
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                    Column(
+                        modifier = Modifier.padding(AskFacultySpacing.md),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Icon(
-                            imageVector        = Icons.Default.Security,
-                            contentDescription = null,
-                            tint               = MaterialTheme.colorScheme.primary,
-                            modifier           = Modifier.size(16.dp),
-                        )
-                        Spacer(Modifier.width(AskFacultySpacing.sm))
                         Text(
-                            text       = "Restricted to authorized faculty & staff",
-                            style      = MaterialTheme.typography.labelSmall,
-                            color      = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
+                            text = "💡 Quick Test Credentials",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
                         )
+                        Spacer(Modifier.height(AskFacultySpacing.xs))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(AskFacultyRadius.sm),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                modifier = Modifier.clickable {
+                                    selectedTab = 0
+                                    studentId = "22CS104"
+                                    studentPassword = "Student@123"
+                                }
+                            ) {
+                                Text(
+                                    text = "Student: 22CS104",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(AskFacultyRadius.sm),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                modifier = Modifier.clickable {
+                                    selectedTab = 1
+                                    facultyId = "30456"
+                                    facultyPassword = "Gow@1415"
+                                }
+                            ) {
+                                Text(
+                                    text = "Faculty: 30456",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                        }
                     }
                 }
 

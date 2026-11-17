@@ -17,7 +17,8 @@ import javax.inject.Inject
 sealed class SplashDestination {
     object Onboarding : SplashDestination()
     object Login : SplashDestination()
-    object Home : SplashDestination()
+    object FacultyHome : SplashDestination()
+    object StudentHome : SplashDestination()
 }
 
 @HiltViewModel
@@ -38,14 +39,12 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             val currentUser = authRepository.currentUser.first()
             if (currentUser != null) {
-                // Validate faculty role
                 val profileResult = profileRepository.getUserProfile(currentUser.uid)
                 val role = profileResult.getOrNull()?.role ?: currentUser.role
-                if (role == Constants.ROLE_FACULTY) {
-                    _destination.value = SplashDestination.Home
-                } else {
-                    authRepository.logout()
-                    _destination.value = SplashDestination.Login
+                when (role) {
+                    Constants.ROLE_FACULTY -> _destination.value = SplashDestination.FacultyHome
+                    Constants.ROLE_STUDENT -> _destination.value = SplashDestination.StudentHome
+                    else -> _destination.value = SplashDestination.Login
                 }
             } else {
                 val onboardingDone = userPreferencesRepository.isOnboardingCompleted.first()
